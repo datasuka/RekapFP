@@ -4,29 +4,9 @@ import pandas as pd
 import fitz  # PyMuPDF
 import re
 from io import BytesIO
-from openpyxl.utils import get_column_letter
 
-def autosize_excel_columns(excel_data):
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        excel_data.to_excel(writer, index=False)
-        worksheet = writer.book.active
-        for col in worksheet.columns:
-            max_length = 0
-            column = col[0].column
-            for cell in col:
-                try:
-                    if cell.value:
-                        max_length = max(max_length, len(str(cell.value)))
-                except:
-                    pass
-            adjusted_width = max_length + 2
-            worksheet.column_dimensions[get_column_letter(column)].width = adjusted_width
-    buffer.seek(0)
-    return buffer
-
+st.markdown("**By : Reza Fahlevi Lubis BKP @zavibis**")
 st.title("Rekap Faktur Pajak ke Excel (Multi File)")
-st.caption("By : Reza Fahlevi Lubis BKP @zavibis")
 
 bulan_map = {
     "Januari": "01", "Februari": "02", "Maret": "03", "April": "04",
@@ -45,9 +25,8 @@ def extract_data_from_text(text):
 
     return {
         "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(\d+)"),
-        "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\s*Nama\s*:\s*(.*?)"),
-        "alamat Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?Alamat\s*:\s*(.*?)"),
-        "NITKU Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?#(\d{22})"),
+        "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\s*Nama\s*:\s*(.*?)\s*Alamat"),
+        "alamat Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?Alamat\s*:\s*(.*?)\s*NPWP"),
         "npwp Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?NPWP\s*:\s*([0-9\.]+)"),
         "Nama Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Nama\s*:\s*(.*?)\s*Alamat"),
         "Alamat Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Alamat\s*:\s*(.*?)\s*#"),
@@ -56,7 +35,7 @@ def extract_data_from_text(text):
         "Nomor paspor Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak": extract(r"Nomor Paspor\s*:\s*(.*?)\s*Identitas"),
         "identitas lain Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Identitas Lain\s*:\s*(.*?)\s*Email"),
         "email Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Email\s*:\s*(.*?)\s"),
-        "NITKU Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?#(\d{22})"),
+        "NITKU Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"#(\d{22})"),
         "Total Harga Jual / Penggantian / Uang Muka / Termin": extract(r"Harga Jual.*?Termin\s*([0-9\.]+,[0-9]+)"),
         "Dasar Pengenaan Pajak": extract(r"Dasar Pengenaan Pajak\s*([0-9\.]+,[0-9]+)"),
         "Jumlah PPN": extract(r"Jumlah PPN.*?([0-9\.]+,[0-9]+)"),
@@ -67,11 +46,7 @@ def extract_data_from_text(text):
         "Penandatangan": extract(r"Ditandatangani secara elektronik\n(.*?)\n"),
     }
 
-uploaded_files = st.file_uploader(
-    "Upload satu atau beberapa PDF Faktur Pajak",
-    type=["pdf"],
-    accept_multiple_files=True
-)
+uploaded_files = st.file_uploader("Upload satu atau beberapa PDF Faktur Pajak", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
     if st.button("Eksekusi Convert"):
@@ -99,10 +74,13 @@ if uploaded_files:
             all_data.append(data)
 
         df = pd.DataFrame(all_data)
-        df = df.applymap(lambda x: str(x).replace(".", "") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
+
+        df = df.applymap(lambda x: str(x).replace(".", "").replace(",", ",") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
 
         st.success("Semua file berhasil diekstrak!")
-        st.dataframe(df, height=600)
+        st.dataframe(df)
 
-        buffer = autosize_excel_columns(df)
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
         st.download_button("Download Rekap Excel", buffer, file_name="rekap_faktur_multi.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
