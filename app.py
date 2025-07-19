@@ -5,6 +5,8 @@ import fitz  # PyMuPDF
 import re
 from io import BytesIO
 
+st.markdown("**By : Reza Fahlevi Lubis BKP @zavibis**")
+st.title("Rekap Faktur Pajak ke Excel (Multi File)")
 
 bulan_map = {
     "Januari": "01", "Februari": "02", "Maret": "03", "April": "04",
@@ -44,45 +46,41 @@ def extract_data_from_text(text):
         "Penandatangan": extract(r"Ditandatangani secara elektronik\n(.*?)\n"),
     }
 
-st.markdown("**By : Reza Fahlevi Lubis BKP @zavibis**")
-st.title("Rekap Faktur Pajak ke Excel (Multi File)")
-
 uploaded_files = st.file_uploader("Upload satu atau beberapa PDF Faktur Pajak", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
     if st.button("Eksekusi Convert"):
-    all_data = []
+        all_data = []
 
         for uploaded_file in uploaded_files:
-        filename = uploaded_file.name
-        with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
-            full_text = ""
-            for page in doc:
-                full_text += page.get_text()
-        data = extract_data_from_text(full_text)
-        data["Nama asli file"] = filename
-        # Ambil kode faktur dari 2 digit awal nomor seri
-        data["Kode Faktur"] = data["Kode dan Nomor Seri Faktur Pajak"][:2]
-        # Ambil masa dan tahun dari tanggal
-        try:
-            tgl_parts = data["Tanggal faktur pajak"].split("/")
-            data["Masa"] = bulan_map.get(tgl_parts[1], "-")
-            data["Tahun"] = tgl_parts[2]
-        except:
-            data["Masa"] = "-"
-            data["Tahun"] = "-"
-    
-        all_data.append(data)
+            filename = uploaded_file.name
+            with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
+                full_text = ""
+                for page in doc:
+                    full_text += page.get_text()
+
+            data = extract_data_from_text(full_text)
+            data["Nama asli file"] = filename
+            data["Kode Faktur"] = data["Kode dan Nomor Seri Faktur Pajak"][:2]
+
+            try:
+                tgl_parts = data["Tanggal faktur pajak"].split("/")
+                data["Masa"] = bulan_map.get(tgl_parts[1], "-")
+                data["Tahun"] = tgl_parts[2]
+            except:
+                data["Masa"] = "-"
+                data["Tahun"] = "-"
+
+            all_data.append(data)
 
         df = pd.DataFrame(all_data)
 
-    # Format angka: hilangkan titik ribuan, biarkan koma desimal
-    df = df.applymap(lambda x: str(x).replace(".", "").replace(",", ",") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
+        df = df.applymap(lambda x: str(x).replace(".", "").replace(",", ",") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
 
         st.success("Semua file berhasil diekstrak!")
         st.dataframe(df)
 
         buffer = BytesIO()
-    df.to_excel(buffer, index=False)
-    buffer.seek(0)
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
         st.download_button("Download Rekap Excel", buffer, file_name="rekap_faktur_multi.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
