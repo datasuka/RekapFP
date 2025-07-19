@@ -44,14 +44,16 @@ def extract_data_from_text(text):
         "Penandatangan": extract(r"Ditandatangani secara elektronik\n(.*?)\n"),
     }
 
+st.markdown("**By : Reza Fahlevi Lubis BKP @zavibis**")
 st.title("Rekap Faktur Pajak ke Excel (Multi File)")
 
 uploaded_files = st.file_uploader("Upload satu atau beberapa PDF Faktur Pajak", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
+    if st.button("Eksekusi Convert"):
     all_data = []
 
-    for uploaded_file in uploaded_files:
+        for uploaded_file in uploaded_files:
         filename = uploaded_file.name
         with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
             full_text = ""
@@ -72,15 +74,15 @@ if uploaded_files:
     
         all_data.append(data)
 
-    df = pd.DataFrame(all_data)
+        df = pd.DataFrame(all_data)
 
     # Format angka: hilangkan titik ribuan, biarkan koma desimal
     df = df.applymap(lambda x: str(x).replace(".", "").replace(",", ",") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
 
-    st.success("Semua file berhasil diekstrak!")
-    st.dataframe(df)
+        st.success("Semua file berhasil diekstrak!")
+        st.dataframe(df)
 
-    buffer = BytesIO()
+        buffer = BytesIO()
     df.to_excel(buffer, index=False)
     buffer.seek(0)
-    st.download_button("Download Rekap Excel", buffer, file_name="rekap_faktur_multi.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button("Download Rekap Excel", buffer, file_name="rekap_faktur_multi.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
