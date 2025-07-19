@@ -1,3 +1,23 @@
+def autosize_excel_columns(excel_data):
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        excel_data.to_excel(writer, index=False)
+        worksheet = writer.book.active
+        for col in worksheet.columns:
+            max_length = 0
+            column = col[0].column  # Get the column index (number)
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            adjusted_width = max_length + 2
+            worksheet.column_dimensions[get_column_letter(column)].width = adjusted_width
+    buffer.seek(0)
+    return buffer
+
+
 
 import streamlit as st
 import pandas as pd
@@ -23,10 +43,28 @@ def extract_data_from_text(text):
         match = re.search(r",\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
         return f"{match.group(1).zfill(2)}/{match.group(2)}/{match.group(3)}" if match else "-"
 
-    return {
-        "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(\d+)"),
-        "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\s*Nama\s*:\s*(.*?)\s*Alamat"),
-        "alamat Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?Alamat\s*:\s*(.*?)\s*NPWP"),
+        return {
+        "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(\d+)
+        "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\s*Nama\s*:\s*(.*?)
+        "alamat Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?Alamat\s*:\s*(.*?)
+        "NITKU Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?#(\d{22})
+        "npwp Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?NPWP\s*:\s*([0-9\.]+)
+        "Nama Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Nama\s*:\s*(.*?)
+        "Alamat Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Alamat\s*:\s*(.*?)
+        "NPWP Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"NPWP\s*:\s*([0-9\.]+)
+        "NIK Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"NIK\s*:\s*(.*?)
+        "Nomor paspor Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak": extract(r"Nomor Paspor\s*:\s*(.*?)
+        "identitas lain Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Identitas Lain\s*:\s*(.*?)
+        "email Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Email\s*:\s*(.*?)
+        "NITKU Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?#(\d{22})
+        "Total Harga Jual / Penggantian / Uang Muka / Termin": extract(r"Harga Jual.*?Termin\s*([0-9\.]+,[0-9]+)
+        "Dasar Pengenaan Pajak": extract(r"Dasar Pengenaan Pajak\s*([0-9\.]+,[0-9]+)
+        "Jumlah PPN": extract(r"Jumlah PPN.*?([0-9\.]+,[0-9]+)
+        "Jumlah PPnBM": extract(r"Jumlah PPnBM.*?([0-9\.]+,[0-9]+)
+        "Kota": extract(r"\n([A-Z .,]+),
+        "referensi": extract(r"Referensi:\s*(.*?)
+        "Penandatangan": extract(r"Ditandatangani secara elektronik\n(.*?)
+    })"),
         "npwp Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?NPWP\s*:\s*([0-9\.]+)"),
         "Nama Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Nama\s*:\s*(.*?)\s*Alamat"),
         "Alamat Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Alamat\s*:\s*(.*?)\s*#"),
@@ -84,6 +122,6 @@ if uploaded_files:
         st.dataframe(df, height=600)
 
         buffer = BytesIO()
-        df.to_excel(buffer, index=False)
+        buffer = autosize_excel_columns(df)
         buffer.seek(0)
         st.download_button("Download Rekap Excel", buffer, file_name="rekap_faktur_multi.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
