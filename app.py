@@ -1,0 +1,58 @@
+
+import streamlit as st
+import pandas as pd
+import fitz  # PyMuPDF
+import re
+from io import BytesIO
+from datetime import datetime
+
+def extract_data_from_text(text):
+    def extract(pattern, default="-"):
+        match = re.search(pattern, text, re.DOTALL)
+        return match.group(1).strip() if match else default
+
+    return {
+        "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(.*)"),
+        "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\n\nNama\s*:\s*(.*)"),
+        "alamat Pengusaha Kena Pajak": extract(r"Alamat\s*:\s*(RUKO.*?)\nNPWP"),
+        "npwp Pengusaha Kena Pajak": extract(r"NPWP\s*:\s*([0-9]+)"),
+        "Nama Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Nama\s*:\s*(.*)"),
+        "Alamat Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Alamat\s*:\s*(.*)\nNPWP"),
+        "NPWP Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"NPWP\s*:\s*([0-9]+)"),
+        "NIK Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"NIK\s*:\s*(.*)"),
+        "Nomor paspor Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak": extract(r"Nomor Paspor\s*:\s*(.*)"),
+        "identitas lain Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Identitas Lain\s*:\s*(.*)"),
+        "email Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Email:\s*(.*?@.*?)\n"),
+        "NITKU Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": "",
+        "Total Harga Jual / Penggantian / Uang Muka / Termin": extract(r"Harga Jual.*?Termin\s*([0-9\.]+,[0-9]+)"),
+        "Dasar Pengenaan Pajak": extract(r"Dasar Pengenaan Pajak\s*([0-9\.]+,[0-9]+)"),
+        "Jumlah PPN": extract(r"Jumlah PPN.*?([0-9\.]+,[0-9]+)"),
+        "Jumlah PPnBM": extract(r"Jumlah PPnBM.*?([0-9\.]+,[0-9]+)"),
+        "Kota": extract(r"
+([A-Z .,]+),\s*\d{1,2}\s+\w+\s+\d{4}"),
+        "Tanggal faktur pajak": extract(r",\s*(\d{1,2}\s+\w+\s+\d{4})"),
+        "referensi": extract(r"Referensi:\s*(.*)\n"),
+        "Penandatangan": extract(r"Ditandatangani secara elektronik\n(.*?)\n"),
+    }
+
+st.title("Rekap Faktur Pajak ke Excel")
+
+uploaded_file = st.file_uploader("Upload PDF Faktur Pajak", type=["pdf"])
+
+if uploaded_file:
+    with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
+        full_text = ""
+        for page in doc:
+            full_text += page.get_text()
+
+    data = extract_data_from_text(full_text)
+    df = pd.DataFrame([data])
+
+    st.success("Data berhasil diekstrak!")
+    st.dataframe(df)
+
+    # Unduh sebagai Excel
+    buffer = BytesIO()
+    df.to_excel(buffer, index=False)
+    buffer.seek(0)
+    st.download_button("Download Excel", buffer, file_name="rekap_faktur.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
