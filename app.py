@@ -5,6 +5,13 @@ import fitz  # PyMuPDF
 import re
 from io import BytesIO
 
+
+bulan_map = {
+    "Januari": "01", "Februari": "02", "Maret": "03", "April": "04",
+    "Mei": "05", "Juni": "06", "Juli": "07", "Agustus": "08",
+    "September": "09", "Oktober": "10", "November": "11", "Desember": "12"
+}
+
 def extract_data_from_text(text):
     def extract(pattern, flags=re.DOTALL, default="-", postproc=lambda x: x.strip()):
         match = re.search(pattern, text, flags)
@@ -45,11 +52,24 @@ if uploaded_files:
     all_data = []
 
     for uploaded_file in uploaded_files:
+        filename = uploaded_file.name
         with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
             full_text = ""
             for page in doc:
                 full_text += page.get_text()
         data = extract_data_from_text(full_text)
+        data["Nama asli file"] = filename
+        # Ambil kode faktur dari 2 digit awal nomor seri
+        data["Kode Faktur"] = data["Kode dan Nomor Seri Faktur Pajak"][:2]
+        # Ambil masa dan tahun dari tanggal
+        try:
+            tgl_parts = data["Tanggal faktur pajak"].split("/")
+            data["Masa"] = bulan_map.get(tgl_parts[1], "-")
+            data["Tahun"] = tgl_parts[2]
+        except:
+            data["Masa"] = "-"
+            data["Tahun"] = "-"
+    
         all_data.append(data)
 
     df = pd.DataFrame(all_data)
