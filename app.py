@@ -10,6 +10,10 @@ def extract_data_from_text(text):
         match = re.search(pattern, text, flags)
         return postproc(match.group(1)) if match else default
 
+    def extract_tanggal(text):
+        match = re.search(r",\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
+        return f"{match.group(1).zfill(2)}/{match.group(2)}/{match.group(3)}" if match else "-"
+
     return {
         "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(\d+)"),
         "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\s*Nama\s*:\s*(.*?)\s*Alamat"),
@@ -28,7 +32,7 @@ def extract_data_from_text(text):
         "Jumlah PPN": extract(r"Jumlah PPN.*?([0-9\.]+,[0-9]+)"),
         "Jumlah PPnBM": extract(r"Jumlah PPnBM.*?([0-9\.]+,[0-9]+)"),
         "Kota": extract(r"\n([A-Z .,]+),\s*\d{1,2}\s+\w+\s+\d{4}"),
-        "Tanggal faktur pajak": extract(r",\s*(\d{1,2}\s+\w+\s+\d{4})"),
+        "Tanggal faktur pajak": extract_tanggal(text),
         "referensi": extract(r"Referensi:\s*(.*?)\n"),
         "Penandatangan": extract(r"Ditandatangani secara elektronik\n(.*?)\n"),
     }
