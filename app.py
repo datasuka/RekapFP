@@ -47,13 +47,10 @@ def extract_data_from_text(text):
     }
 
 uploaded_files = st.file_uploader(
-    label="Upload satu atau beberapa PDF Faktur Pajak",
+    "Upload satu atau beberapa PDF Faktur Pajak",
     type=["pdf"],
-    accept_multiple_files=True,
-    label_visibility="visible",
-    key="pdf_uploader",
-    help="Unggah hingga 10 file dalam sekali proses",
-    disabled=False"Upload satu atau beberapa PDF Faktur Pajak", type=["pdf"], accept_multiple_files=True)
+    accept_multiple_files=True
+)
 
 if uploaded_files:
     if st.button("Eksekusi Convert"):
@@ -81,11 +78,10 @@ if uploaded_files:
             all_data.append(data)
 
         df = pd.DataFrame(all_data)
-
         df = df.applymap(lambda x: str(x).replace(".", "").replace(",", ",") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
 
         st.success("Semua file berhasil diekstrak!")
-        st.dataframe(df, height=500)
+        st.dataframe(df, height=600)
 
         buffer = BytesIO()
         df.to_excel(buffer, index=False)
