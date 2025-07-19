@@ -35,7 +35,7 @@ def extract_data_from_text(text):
         "Nomor paspor Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak": extract(r"Nomor Paspor\s*:\s*(.*?)\s*Identitas"),
         "identitas lain Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Identitas Lain\s*:\s*(.*?)\s*Email"),
         "email Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Email\s*:\s*(.*?)\s"),
-        "NITKU Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"#(\d{22})"),
+        "NITKU Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Alamat Pembeli Barang Kena Pajak.*?#(\d{22})"),
         "Total Harga Jual / Penggantian / Uang Muka / Termin": extract(r"Harga Jual.*?Termin\s*([0-9\.]+,[0-9]+)"),
         "Dasar Pengenaan Pajak": extract(r"Dasar Pengenaan Pajak\s*([0-9\.]+,[0-9]+)"),
         "Jumlah PPN": extract(r"Jumlah PPN.*?([0-9\.]+,[0-9]+)"),
@@ -74,8 +74,7 @@ if uploaded_files:
             all_data.append(data)
 
         df = pd.DataFrame(all_data)
-
-        df = df.applymap(lambda x: str(x).replace(".", "").replace(",", ",") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
+        df = df.applymap(lambda x: str(x).replace(".", "") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
 
         st.success("Semua file berhasil diekstrak!")
         st.dataframe(df)
