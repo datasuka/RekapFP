@@ -44,7 +44,7 @@ def extract_data_from_text(text):
         return f"{match.group(1).zfill(2)}/{match.group(2)}/{match.group(3)}" if match else "-"
 
         return {
-        "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(\d+)
+"Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(\d+)"),
         "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\s*Nama\s*:\s*(.*?)
         "alamat Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?Alamat\s*:\s*(.*?)
         "NITKU Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:.*?#(\d{22})
