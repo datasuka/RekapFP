@@ -4,25 +4,24 @@ import pandas as pd
 import fitz  # PyMuPDF
 import re
 from io import BytesIO
-from datetime import datetime
 
 def extract_data_from_text(text):
-    def extract(pattern, default="-"):
-        match = re.search(pattern, text, re.DOTALL)
-        return match.group(1).strip() if match else default
+    def extract(pattern, flags=re.DOTALL, default="-", postproc=lambda x: x.strip()):
+        match = re.search(pattern, text, flags)
+        return postproc(match.group(1)) if match else default
 
     return {
-        "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(.*)"),
-        "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\n\nNama\s*:\s*(.*)"),
-        "alamat Pengusaha Kena Pajak": extract(r"Alamat\s*:\s*(RUKO.*?)\nNPWP"),
-        "npwp Pengusaha Kena Pajak": extract(r"NPWP\s*:\s*([0-9]+)"),
-        "Nama Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak.*?Nama\s*:\s*(.*)"),
-        "Alamat Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Alamat\s*:\s*(.*?)\nNPWP"),
-        "NPWP Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"NPWP\s*:\s*([0-9]+)"),
+        "Kode dan Nomor Seri Faktur Pajak": extract(r"Kode dan Nomor Seri Faktur Pajak:\s*(\d+)"),
+        "Nama Pengusaha Kena Pajak": extract(r"Pengusaha Kena Pajak:\s*Nama\s*:\s*(.*?)\s*Alamat"),
+        "alamat Pengusaha Kena Pajak": extract(r"Alamat\s*:\s*(.*?)\s*NPWP"),
+        "npwp Pengusaha Kena Pajak": extract(r"NPWP\s*:\s*([0-9\.]+)"),
+        "Nama Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:\s*Nama\s*:\s*(.*?)\s*Alamat"),
+        "Alamat Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Alamat\s*:\s*(.*?)\s*NPWP"),
+        "NPWP Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"NPWP\s*:\s*([0-9\.]+)"),
         "NIK Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"NIK\s*:\s*(.*)"),
         "Nomor paspor Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak": extract(r"Nomor Paspor\s*:\s*(.*)"),
         "identitas lain Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Identitas Lain\s*:\s*(.*)"),
-        "email Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Email:\s*(.*?@.*?)\n"),
+        "email Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": extract(r"Email\s*:\s*(.*?)\s"),
         "NITKU Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak:": "",
         "Total Harga Jual / Penggantian / Uang Muka / Termin": extract(r"Harga Jual.*?Termin\s*([0-9\.]+,[0-9]+)"),
         "Dasar Pengenaan Pajak": extract(r"Dasar Pengenaan Pajak\s*([0-9\.]+,[0-9]+)"),
