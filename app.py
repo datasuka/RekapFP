@@ -25,11 +25,11 @@ def extract_tanggal(text):
 def extract_nitku_pembeli(text):
     lines = text.splitlines()
     for i, line in enumerate(lines):
-        if "NPWP" in line:
-            for j in range(i, min(i+3, len(lines))):
-                match = re.search(r"#(\d{22})", lines[j])
-                if match:
-                    return match.group(1)
+        if "NPWP" in line and i > 0:
+            prev_line = lines[i-1]
+            match = re.search(r"#(\d{22})", prev_line)
+            if match:
+                return match.group(1)
     return "-"
 
 def extract_data_from_text(text):
