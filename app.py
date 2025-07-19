@@ -5,8 +5,8 @@ import fitz  # PyMuPDF
 import re
 from io import BytesIO
 
-st.markdown("**By : Reza Fahlevi Lubis BKP @zavibis**")
 st.title("Rekap Faktur Pajak ke Excel (Multi File)")
+st.caption("By : Reza Fahlevi Lubis BKP @zavibis")
 
 bulan_map = {
     "Januari": "01", "Februari": "02", "Maret": "03", "April": "04",
@@ -46,7 +46,14 @@ def extract_data_from_text(text):
         "Penandatangan": extract(r"Ditandatangani secara elektronik\n(.*?)\n"),
     }
 
-uploaded_files = st.file_uploader("Upload satu atau beberapa PDF Faktur Pajak", type=["pdf"], accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    label="Upload satu atau beberapa PDF Faktur Pajak",
+    type=["pdf"],
+    accept_multiple_files=True,
+    label_visibility="visible",
+    key="pdf_uploader",
+    help="Unggah hingga 10 file dalam sekali proses",
+    disabled=False"Upload satu atau beberapa PDF Faktur Pajak", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
     if st.button("Eksekusi Convert"):
@@ -78,7 +85,7 @@ if uploaded_files:
         df = df.applymap(lambda x: str(x).replace(".", "").replace(",", ",") if isinstance(x, str) and re.match(r'^\d{1,3}(\.\d{3})*,\d{2}$', x) else x)
 
         st.success("Semua file berhasil diekstrak!")
-        st.dataframe(df)
+        st.dataframe(df, height=500)
 
         buffer = BytesIO()
         df.to_excel(buffer, index=False)
